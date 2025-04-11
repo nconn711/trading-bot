@@ -1,6 +1,6 @@
 # trading-bot
 
-A Python-based trading bot leveraging Interactive Brokers' TWS API via the `ib_insync` library.
+A Python-based trading bot leveraging Interactive Brokers' TWS API via the `ib_insync` library. Video instructions for setting up environment: https://www.youtube.com/watch?v=ZEtsLuXdC-g.
 
 ## Installation
 
