@@ -4,6 +4,11 @@ A Python-based trading bot leveraging Interactive Brokers' TWS API via the `ib_i
 
 ## Installation
 
+**Install and Configure TWS/Gateway:**
+1. Open the following link: https://www.interactivebrokers.com/campus/ibkr-quant-news/interactive-brokers-python-api-native-a-step-by-step-guide/
+2. Follow the steps starting at **Download your IB client (TWS or IB Gateway)** to install IB Trader Work Station (TWS)
+3. Make sure you sign into paper trading account
+
 **Open Terminal:**
 1. Click cmd+space to open Spotlight Search
 2. Search for Terminal and click enter
@@ -30,10 +35,9 @@ cd ../../../
 
 ## Usage
 
-**Configure TWS/Gateway:**
+**TWS/Gateway:**
 
 - Ensure that Interactive Brokers' Trader Workstation (TWS) or IB Gateway is running.
-- Enable API access in the settings.
 
 **Run the Bot:**
 ```bash
