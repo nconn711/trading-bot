@@ -4,6 +4,10 @@ A Python-based trading bot leveraging Interactive Brokers' TWS API via the `ib_i
 
 ## Installation
 
+**Open Terminal:**
+1. Click cmd+space to open Spotlight Search
+2. Search for Terminal and click enter
+
 **Clone the Repository:**
 ```bash
 git clone https://github.com/nconn711/trading-bot.git
