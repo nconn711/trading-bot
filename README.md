@@ -40,9 +40,20 @@ cd ../../../
 - Ensure that Interactive Brokers' Trader Workstation (TWS) or IB Gateway is running.
 
 **Run the Bot:**
+
 ```bash
-python3 IBApp.py
+python3 IBApp.py --stock-symbol TSLA --upper 200.0 --lower 180.0 --buy-qty 10
 ```
+
+**Arguments:**
+
+- `--stock-symbol`: Ticker symbol (e.g. TSLA, AAPL)
+- `--upper`: Upper threshold for triggering a stop loss **buy** order
+- `--lower`: Lower threshold for triggering a stop loss **sell** order
+- `--buy-qty`: Number of shares to buy per order
+
+> **Note:** The `--upper` value must be greater than the `--lower` value.
+
 
 ## File Structure
 
