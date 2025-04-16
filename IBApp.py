@@ -178,7 +178,7 @@ class IBClient(EWrapper, EClient):
             filled_total = self.fill_tracker[order_id]
             action = self.active_order.action
 
-            if fill_qty < self.buy_qty:
+            if filled_total < self.buy_qty:
                 self.logger.info(f"Partial fill: Order {order_id} Action: {action} @ {executed_price} Qty: {fill_qty} (Total filled: {filled_total}/{self.buy_qty})")
                 self.log_trade_event(order_id, "PartialFill", action,
                                      self.active_order.orderType,
