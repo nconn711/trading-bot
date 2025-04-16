@@ -195,6 +195,8 @@ class IBClient(EWrapper, EClient):
                                          self.active_order.auxPrice,
                                          executed_price, fill_qty, "Filled",
                                          f"BUY completed at {executed_price}")
+                    # Reset order tracking
+                    self.active_order = None
                     self.in_position = True
                     self.place_sell_order()
 
@@ -208,11 +210,11 @@ class IBClient(EWrapper, EClient):
                                          self.active_order.auxPrice,
                                          executed_price, fill_qty, "Filled",
                                          f"SELL completed at {executed_price}. Loss: {loss:.2f}. Running loss: {self.running_loss:.2f}")
+                    # Reset order tracking
+                    self.active_order = None
                     self.in_position = False
                     self.place_buy_order()
 
-                # Reset order tracking
-                self.active_order = None
                 del self.fill_tracker[order_id]
 
 
