@@ -36,6 +36,7 @@ class IBClient(EWrapper, EClient):
 
         # Track the one active order (None if no order is active)
         self.active_order = None
+        self.fill_tracker = {}  # order_id -> filled quantity
 
         # Trading state: True if holding the stock.
         self.in_position = False
@@ -164,49 +165,56 @@ class IBClient(EWrapper, EClient):
         self.logger.info("Positions loaded.")
         self.initialize_orders_if_ready()
 
-    def error(self, req_id, error_code, error_string, misc):
+    def error(self, req_id, error_code, error_string, misc=''):
         self.logger.error(f"Error. ReqId: {req_id}, Code: {error_code}, Msg: {error_string}")
 
     def execDetails(self, req_id, contract, execution):
-        """
-        Callback for execution details.
-        When an order executes, mark it complete, log the execution details (including executed price),
-        update running losses (for SELL orders), and trigger the next order.
-        """
         order_id = execution.orderId
         executed_price = execution.price
+        fill_qty = execution.shares
 
-        if self.active_order is not None and self.active_order.orderId == order_id:
-            setattr(self.active_order, "executed_price", executed_price)
+        if self.active_order and self.active_order.orderId == order_id:
+            self.fill_tracker[order_id] = self.fill_tracker.get(order_id, 0) + fill_qty
+            filled_total = self.fill_tracker[order_id]
             action = self.active_order.action
-            self.logger.info(f"Order {order_id} executed. Action: {action} at Price: {executed_price}")
 
-            if action == "BUY":
-                self.last_buy_price = executed_price
-                self.log_trade_event(order_id, "Executed", action,
+            if fill_qty < self.buy_qty:
+                self.logger.info(f"Partial fill: Order {order_id} Action: {action} @ {executed_price} Qty: {fill_qty} (Total filled: {filled_total}/{self.buy_qty})")
+                self.log_trade_event(order_id, "PartialFill", action,
                                      self.active_order.orderType,
                                      self.active_order.auxPrice,
-                                     executed_price, 0, "Filled",
-                                     f"BUY order executed at {executed_price}.")
-                self.active_order = None
-                self.in_position = True
-                self.logger.info("BUY order executed. Now in position. Placing SELL stop order.")
-                self.place_sell_order()
+                                     executed_price, fill_qty, "Partial",
+                                     f"Partial fill at {executed_price}. Running total: {filled_total}")
+            elif filled_total >= self.buy_qty:
+                self.logger.info(f"Order {order_id} fully filled.")
 
-            elif action == "SELL":
-                loss = 0.0
-                if self.last_buy_price is not None:
-                    loss = (self.last_buy_price - executed_price) * self.buy_qty
-                self.running_loss += loss
-                self.log_trade_event(order_id, "Executed", action,
-                                     self.active_order.orderType,
-                                     self.active_order.auxPrice,
-                                     executed_price, 0, "Filled",
-                                     f"SELL order executed at {executed_price}. Loss: {loss:.2f}. Running loss: {self.running_loss:.2f}.")
+                if action == "BUY":
+                    self.last_buy_price = executed_price
+                    self.log_trade_event(order_id, "Executed", action,
+                                         self.active_order.orderType,
+                                         self.active_order.auxPrice,
+                                         executed_price, fill_qty, "Filled",
+                                         f"BUY completed at {executed_price}")
+                    self.in_position = True
+                    self.place_sell_order()
+
+                elif action == "SELL":
+                    loss = 0.0
+                    if self.last_buy_price is not None:
+                        loss = (self.last_buy_price - executed_price) * self.buy_qty
+                    self.running_loss += loss
+                    self.log_trade_event(order_id, "Executed", action,
+                                         self.active_order.orderType,
+                                         self.active_order.auxPrice,
+                                         executed_price, fill_qty, "Filled",
+                                         f"SELL completed at {executed_price}. Loss: {loss:.2f}. Running loss: {self.running_loss:.2f}")
+                    self.in_position = False
+                    self.place_buy_order()
+
+                # Reset order tracking
                 self.active_order = None
-                self.in_position = False
-                self.logger.info("SELL order executed. Now out of position. Placing BUY stop order.")
-                self.place_buy_order()
+                del self.fill_tracker[order_id]
+
 
     # --- End Callbacks ---
 
@@ -249,10 +257,12 @@ class IBClient(EWrapper, EClient):
             self.logger.info(f"Placed SELL stop order (ID: {order.orderId}) at trigger {order.auxPrice}.")
 
     def run_bot(self):
-        """Main loop to keep the connection alive."""
-        while True:
-            time.sleep(1)
-
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            self.logger.info("KeyboardInterrupt caught in run_bot. Exiting...")
+            self.disconnect()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the trading bot.")
