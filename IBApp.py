@@ -2,6 +2,7 @@ import os
 import csv
 import time
 import logging
+import requests
 from datetime import datetime, timezone
 from threading import Thread
 import argparse
@@ -10,6 +11,8 @@ from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
 from ibapi.order import Order
+
+
 
 
 class IBClient(EWrapper, EClient):
@@ -25,6 +28,8 @@ class IBClient(EWrapper, EClient):
     ):
         EWrapper.__init__(self)
         EClient.__init__(self, wrapper=self)
+
+        self.webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
 
         # Connection parameters
         self.host = host
@@ -88,6 +93,15 @@ class IBClient(EWrapper, EClient):
         self.logger.info(f"  Lower Threshold  : {self.lower_bound}")
         self.logger.info(f"  Buy Quantity     : {self.buy_qty}")
 
+    def send_notification(self, text: str):
+        if not self.webhook_url:
+            return
+        payload = {"content": text}
+        try:
+            requests.post(self.webhook_url, json=payload, timeout=2)
+        except Exception:
+            pass
+
     def create_contract(self, symbol, exchange, currency):
         contract = Contract()
         contract.symbol = symbol
@@ -120,6 +134,8 @@ class IBClient(EWrapper, EClient):
                 f"{self.running_loss:.2f}",
                 safe_note
             ])
+        msg = f"[{event_type}] {action} {qty}@{price:.2f} | running loss: {self.running_loss:.2f} | {safe_note}"
+        self.send_notification(msg)
 
     def initialize_orders_if_ready(self):
         if not (self.open_orders_loaded and self.positions_loaded):

@@ -31,6 +31,12 @@ pip3 install setuptools
 cd IBJts/source/pythonclient
 python3 setup.py install
 cd ../../../
+pip3 install -r requirements.txt
+```
+
+**Setup Discord Webhook URL for Notifications (skip if you do not want notifications):**
+```bash
+export DISCORD_WEBHOOK_URL=<webhook_url>
 ```
 
 ## Usage
