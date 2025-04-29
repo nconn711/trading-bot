@@ -211,7 +211,7 @@ class IBClient(EWrapper, EClient):
                 )
             elif action == "SELL":
                 loss = (
-                    (self.last_buy_price - executed_price) * fill_qty
+                    (self.last_buy_price - executed_price) * float(fill_qty)
                     if self.last_buy_price is not None else 0.0
                 )
                 self.running_loss += loss
